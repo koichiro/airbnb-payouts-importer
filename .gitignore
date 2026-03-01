@@ -6,6 +6,7 @@ __pycache__/
 env/
 build/
 dist/
+.coverage
 
 # GCP / IDE
 .env

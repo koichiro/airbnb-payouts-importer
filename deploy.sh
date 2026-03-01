@@ -9,10 +9,11 @@ GCP_PROJECT_ID="YOUR_PROJECT_ID"
 echo "Deploying ${FUNCTION_NAME}..."
 
 gcloud functions deploy ${FUNCTION_NAME} \
-  --runtime python312 \
-  --memory 512MB
+  --gen2 \
+  --runtime python311 \
   --entry-point load_airbnb_csv \
   --region ${REGION} \
+  --memory 512MB \
   --trigger-event-type google.cloud.storage.object.v1.finalized \
   --trigger-location ${REGION} \
   --trigger-bucket ${TRIGGER_BUCKET} \
@@ -20,4 +21,3 @@ gcloud functions deploy ${FUNCTION_NAME} \
   --source .
 
 echo "Deployment complete."
-
