@@ -88,9 +88,13 @@ def load_airbnb_csv(event, context=None):
         unmapped_source_columns = [col for col in source_columns if col not in mapped_source_columns]
 
         if unmapped_source_columns:
-            logger.warning(f"Found unmapped columns in the input CSV: {unmapped_source_columns}. "
-                           f"These columns will be loaded with their original names into the staging table. "
-                           f"Consider updating COLUMN_MAP or the target BigQuery table schema if these columns are important.")
+            logger.warning(
+                "Detected unmapped Airbnb CSV columns: %s. "
+                "These columns are not part of COLUMN_MAP/job_schema and will keep their raw names. "
+                "If this is a new Airbnb export format, add explicit mappings and schema fields before the next production import. "
+                "If the target BigQuery table was created from the old schema, recreate it or update its schema to match.",
+                sorted(unmapped_source_columns),
+            )
 
         df.rename(columns=COLUMN_MAP, inplace=True)
 
