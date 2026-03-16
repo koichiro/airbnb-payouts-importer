@@ -1,5 +1,6 @@
 import pytest
 import pandas as pd
+import logging
 from unittest.mock import MagicMock, patch
 from google.cloud.exceptions import NotFound
 from decimal import Decimal
@@ -201,3 +202,36 @@ def test_airbnb_remitted_tax_column_is_mapped_and_merged(
     merge_sql = mock_bigquery_client.query.call_args[0][0]
     assert "`airbnb_remitted_tax`" in merge_sql
     assert "`Airbnb remitted tax`" not in merge_sql
+
+@patch('src.functions.storage.Client')
+@patch('src.functions.bigquery.Client')
+def test_unmapped_columns_emit_actionable_warning(
+    mock_bq_client_cls,
+    mock_storage_client_cls,
+    mock_gcs_blob,
+    mock_storage_client,
+    mock_bigquery_client,
+    caplog
+):
+    """
+    Tests that unexpected Airbnb columns emit a warning with next-step guidance.
+    """
+    mock_storage_client_cls.return_value = mock_storage_client
+    mock_bq_client_cls.return_value = mock_bigquery_client
+
+    event = create_mock_event({"bucket": "test-bucket", "name": "test-file.csv"})
+
+    csv_content = b"""\
+"\xe6\x97\xa5\xe4\xbb\x98","Unexpected Airbnb Column","\xe9\x87\x91\xe9\xa1\x8d"
+"03/12/2026","foo","100.00"
+"""
+    mock_gcs_blob.download_as_bytes.return_value = csv_content
+    mock_bigquery_client.get_table.return_value = MagicMock()
+
+    with caplog.at_level(logging.WARNING):
+        load_airbnb_csv(event, None)
+
+    assert "Detected unmapped Airbnb CSV columns" in caplog.text
+    assert "Unexpected Airbnb Column" in caplog.text
+    assert "add explicit mappings and schema fields" in caplog.text
+    assert "recreate it or update its schema to match" in caplog.text
