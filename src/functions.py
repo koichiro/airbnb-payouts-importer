@@ -76,6 +76,7 @@ def load_airbnb_csv(event, context=None):
             'ペット料金': 'pet_fee',
             '総収入': 'total_income',
             '宿泊税': 'accommodation_tax',
+            'Airbnb remitted tax': 'airbnb_remitted_tax',
             'ホスティング収入年度': 'hosting_revenue_fiscal_year'
         }
 
@@ -103,7 +104,7 @@ def load_airbnb_csv(event, context=None):
         # Sanitize data types for BigQuery
         numeric_cols = [
             'amount', 'paid', 'service_fee', 'express_transfer_fee', 'cleaning_fee',
-            'pet_fee', 'total_income', 'accommodation_tax'
+            'pet_fee', 'total_income', 'accommodation_tax', 'airbnb_remitted_tax'
         ]
         integer_cols = ['number_of_nights', 'hosting_revenue_fiscal_year']
 
@@ -166,6 +167,7 @@ def load_airbnb_csv(event, context=None):
             bigquery.SchemaField("pet_fee", "NUMERIC"),
             bigquery.SchemaField("total_income", "NUMERIC"),
             bigquery.SchemaField("accommodation_tax", "NUMERIC"),
+            bigquery.SchemaField("airbnb_remitted_tax", "NUMERIC"),
             bigquery.SchemaField("hosting_revenue_fiscal_year", "INTEGER"),
             bigquery.SchemaField("row_id", "STRING", "REQUIRED"),
         ]
