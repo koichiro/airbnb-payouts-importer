@@ -1,71 +1,109 @@
 # Airbnb Earnings to BigQuery Pipeline
 
-[![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
-[![GCP](https://img.shields.io/badge/GCP-Cloud%20Functions-orange.svg)](https://cloud.google.com/functions)
+[![Ruby](https://img.shields.io/badge/ruby-3.3-red.svg)](https://www.ruby-lang.org/)
+[![GCP](https://img.shields.io/badge/GCP-Cloud%20Run-orange.svg)](https://cloud.google.com/run)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 **Stop manual copy-pasting. Transition your Airbnb management from messy spreadsheets to a robust data warehouse.**
 
 This project provides an automated ETL pipeline that triggers when an Airbnb earnings CSV is uploaded to Google Cloud Storage (GCS). It cleanses the data and performs an **UPSERT (MERGE)** into BigQuery, ensuring your financial records are always up-to-date and free of duplicates.
 
-
+This implementation is written in **Ruby** and is designed to run on **Cloud Run** with **Eventarc**. It preserves the behavior of the original Python pipeline as closely as possible, except for unavoidable language-level differences.
 
 ---
 
 ## 🚀 Key Features
 
 * **Automated ETL**: Fully event-driven. Upload a file to GCS, and your data appears in BigQuery seconds later.
-* **Idempotency (Smart Upsert)**: Implements a SHA256 row-hashing logic. It uniquely identifies every entry (including Payouts without confirmation codes), preventing duplicate records even if the same file is uploaded multiple times.
+* **Idempotency (Smart Upsert)**: Implements SHA256 row hashing. It uniquely identifies every entry, including payouts without confirmation codes, preventing duplicate rows when the same file is uploaded multiple times.
 * **Data Cleansing & Normalization**:
     * Maps Japanese headers to standardized English column names.
-    * Converts US-style dates (`MM/DD/YYYY`) to ISO format (`YYYY-MM-DD`).
-    * Sanitizes numeric fields and handles missing values (NaN to 0).
-* **Hybrid Runtime Support**: Compatible with both **Cloud Functions Gen 1** and **Gen 2** (CloudEvent) signatures.
-* **BI & Analytics Ready**: Query via SQL or use "Connected Sheets" in Google Sheets for real-time financial dashboards.
+    * Converts US-style dates (`MM/DD/YYYY`) to ISO-compatible values for BigQuery.
+    * Normalizes financial columns with `BigDecimal` for BigQuery `NUMERIC` compatibility.
+    * Preserves unmapped source columns and emits actionable warnings when Airbnb changes the export format.
+* **Cloud Run Ready**: Accepts HTTP requests from Eventarc and supports both structured CloudEvent payloads and raw event-style payloads.
+* **BI & Analytics Ready**: Query with SQL or connect BigQuery to Google Sheets or Looker Studio for financial dashboards.
+* **Tested for OSS Use**: Includes a `Minitest` suite with `SimpleCov` coverage enforcement. Current coverage is above 80%.
 
 ## 🏗 Architecture
 
-1.  **Storage**: Google Cloud Storage (Trigger Bucket).
-2.  **Compute**: Google Cloud Functions (Python + Pandas).
-3.  **Warehouse**: Google BigQuery.
-4.  **Interface**: Google Sheets (Connected Sheets) or Looker Studio.
+1. **Storage**: Google Cloud Storage (trigger bucket).
+2. **Routing**: Eventarc (object finalized trigger).
+3. **Compute**: Cloud Run (Ruby + Rack/Puma).
+4. **Warehouse**: Google BigQuery.
+5. **Interface**: Google Sheets (Connected Sheets) or Looker Studio.
 
 ## ⚙️ Configuration
 
-The pipeline is controlled via environment variables in Cloud Functions.
+The pipeline is controlled via environment variables in Cloud Run.
 
 | Variable | Description | Default |
 | :--- | :--- | :--- |
 | `GCP_PROJECT_ID` | Your Google Cloud Project ID. | - |
-| `BQ_DATASET_ID` | Destination BigQuery Dataset ID. | `airbnb_management` |
-| `BQ_TABLE_ID` | Destination BigQuery Table ID. | `earnings_cleaned` |
+| `BQ_DATASET_ID` | Destination BigQuery dataset ID. | `airbnb_management` |
+| `BQ_TABLE_ID` | Destination BigQuery table ID. | `earnings_cleaned` |
+| `PORT` | HTTP port used by Cloud Run. | `8080` |
 
 ## 🛠 Setup & Deployment
 
 ### 1. Prerequisites (IAM Roles)
-Ensure the Cloud Functions Service Account has the following permissions:
+Ensure the Cloud Run service account has the following permissions:
 * `Storage Object Viewer`: To read CSV files from GCS.
-* `BigQuery Data Editor`: To insert/merge data into tables.
+* `BigQuery Data Editor`: To insert, copy, and merge data into tables.
 * `BigQuery Job User`: To run query and load jobs.
 
-### 2. Deployment
+If you deploy the Eventarc trigger from CI/CD or the command line, that identity also needs the relevant Eventarc and Cloud Run administration permissions.
+
+### 2. Local Setup
+
+```bash
+bundle install
+bundle exec puma -C config/puma.rb
+```
+
+Health check:
+
+```bash
+curl http://localhost:8080/up
+```
+
+### 3. Testing
+
+```bash
+bundle exec rake test
+```
+
+### 4. Deployment
 Deploy using the provided `deploy.sh` or through a CI/CD pipeline like Cloud Build (see `cloudbuild.yaml`).
 
 ```bash
 chmod +x deploy.sh
+
+SERVICE_NAME=airbnb-payouts-import \
+TRIGGER_NAME=airbnb-payouts-import-gcs-finalized \
+REGION=asia-northeast1 \
+PROJECT_ID=your-project-id \
+TRIGGER_BUCKET=your-bucket \
+SERVICE_ACCOUNT_EMAIL=etl-runner@your-project-id.iam.gserviceaccount.com \
 ./deploy.sh
 ```
 
-## 📊Usage
+## 📊 Usage
 
-1. Export your **"Transaction History"** CSV from the Airbnb Hosting Dashboard.
+1. Export your **Transaction History** CSV from the Airbnb hosting dashboard.
 2. Upload the CSV to your designated GCS bucket.
-3. The Cloud Function will automatically process and merge the data into BigQuery.
-4. Analyze your data: Open Google Sheets > **Data > Data connectors > Connect to BigQuery**.
+3. Eventarc sends the object-finalized event to Cloud Run.
+4. The service cleans, stages, and merges the data into BigQuery.
+5. Analyze your data in BigQuery, Google Sheets, or Looker Studio.
 
+## Notes
+
+* Like the original implementation, this project uses a staging table and then performs a `MERGE` into the target table.
+* Like the original implementation, if Airbnb introduces a new column and your target BigQuery table schema is not updated, the merge can fail until the schema is aligned.
+* The service entrypoint is HTTP-based because Cloud Run receives events through Eventarc rather than Cloud Functions-style `event, context` handlers.
 
 ## 🤝 Contributing
-Contributions are welcome! Feel free to open an issue or submit a pull request if you have ideas for improvement.
+Contributions are welcome. Feel free to open an issue or submit a pull request if you have ideas for improvement.
 
 ## 📝 License
-This project is licensed under the MIT License - see the  [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.

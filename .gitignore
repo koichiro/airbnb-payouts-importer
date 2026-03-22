@@ -1,15 +1,7 @@
-# Python
+/vendor/bundle
+/coverage
+/.coverage
+/.bundle
+/.ruby-lsp
 __pycache__/
-*.py[cod]
-*$py.class
-.venv/
-env/
-build/
-dist/
-.coverage
-
-# GCP / IDE
-.env
-.vscode/
-.idea/
-.gcloudignore
+*.log
