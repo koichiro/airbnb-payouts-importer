@@ -2,16 +2,28 @@ steps:
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     args:
       - gcloud
-      - functions
+      - run
       - deploy
-      - ${_FUNCTION_TARGET}
+      - ${_SERVICE_NAME}
       - --region=${_REGION}
-      - --memory=512MB
-      - --runtime=python312
+      - --memory=512Mi
       - --service-account=${SERVICE_ACCOUNT_EMAIL}
-      - --trigger-bucket=${_TRIGGER_BUCKET}
-      - --set-env-vars=GCP_PROJECT_ID=${PROJECT_ID},BQ_DATASET_ID=${_BQ_DATASET_ID},BQ_TABLE_ID=${_BQ_TABLE_ID}
       - --source=.
+      - --no-allow-unauthenticated
+      - --set-env-vars=GCP_PROJECT_ID=${PROJECT_ID},BQ_DATASET_ID=${_BQ_DATASET_ID},BQ_TABLE_ID=${_BQ_TABLE_ID}
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    args:
+      - gcloud
+      - eventarc
+      - triggers
+      - create
+      - ${_TRIGGER_NAME}
+      - --location=${_REGION}
+      - --destination-run-service=${_SERVICE_NAME}
+      - --destination-run-region=${_REGION}
+      - --event-filters=type=google.cloud.storage.object.v1.finalized
+      - --event-filters=bucket=${_TRIGGER_BUCKET}
+      - --service-account=${SERVICE_ACCOUNT_EMAIL}
 
 options:
   logging: CLOUD_LOGGING_ONLY
