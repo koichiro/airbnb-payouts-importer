@@ -12,6 +12,14 @@ steps:
       - --no-allow-unauthenticated
       - --set-env-vars=GCP_PROJECT_ID=${PROJECT_ID},BQ_DATASET_ID=${_BQ_DATASET_ID},BQ_TABLE_ID=${_BQ_TABLE_ID}
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        if gcloud eventarc triggers describe "${_TRIGGER_NAME}" --location="${_REGION}" >/dev/null 2>&1; then
+          gcloud eventarc triggers delete "${_TRIGGER_NAME}" --location="${_REGION}" --quiet
+        fi
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     args:
       - gcloud
       - eventarc
