@@ -7,10 +7,18 @@ steps:
       - ${_SERVICE_NAME}
       - --region=${_REGION}
       - --memory=512Mi
-      - --service-account=${SERVICE_ACCOUNT_EMAIL}
+      - --service-account=${_SERVICE_ACCOUNT_EMAIL}
       - --source=.
       - --no-allow-unauthenticated
       - --set-env-vars=GCP_PROJECT_ID=${PROJECT_ID},BQ_DATASET_ID=${_BQ_DATASET_ID},BQ_TABLE_ID=${_BQ_TABLE_ID}
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        if gcloud eventarc triggers describe "${_TRIGGER_NAME}" --location="${_REGION}" >/dev/null 2>&1; then
+          gcloud eventarc triggers delete "${_TRIGGER_NAME}" --location="${_REGION}" --quiet
+        fi
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     args:
       - gcloud
@@ -23,7 +31,7 @@ steps:
       - --destination-run-region=${_REGION}
       - --event-filters=type=google.cloud.storage.object.v1.finalized
       - --event-filters=bucket=${_TRIGGER_BUCKET}
-      - --service-account=${SERVICE_ACCOUNT_EMAIL}
+      - --service-account=${_SERVICE_ACCOUNT_EMAIL}
 
 options:
   logging: CLOUD_LOGGING_ONLY
