@@ -46,8 +46,17 @@ module AirbnbPayous
 
     private
 
-    def strip_bom(csv_content)
-      csv_content.to_s.sub(/\A\xEF\xBB\xBF/, "")
+    def normalize_encoding(csv_content)
+      # Force to UTF-8 and handle invalid sequences (common in CSV exports)
+      content = csv_content.to_s.dup.force_encoding("UTF-8")
+      unless content.valid_encoding?
+        # If not valid UTF-8, try common encodings or replace invalid bytes
+        content = csv_content.to_s.encode("UTF-8", invalid: :replace, undef: :replace, replace: "")
+      end
+
+      # Remove UTF-8 Byte Order Mark (BOM) if present
+      content.sub!("\xEF\xBB\xBF", "")
+      content
     end
 
     def normalize_cell(value)
