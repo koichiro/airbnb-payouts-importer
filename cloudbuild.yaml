@@ -10,7 +10,7 @@ steps:
       - --service-account=${_SERVICE_ACCOUNT_EMAIL}
       - --source=.
       - --no-allow-unauthenticated
-      - --set-env-vars=GCP_PROJECT_ID=${PROJECT_ID},BQ_DATASET_ID=${_BQ_DATASET_ID},BQ_TABLE_ID=${_BQ_TABLE_ID}
+      - --set-env-vars=GCP_PROJECT_ID=${PROJECT_ID}
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: bash
     args:
