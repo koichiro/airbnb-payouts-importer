@@ -25,6 +25,7 @@ module AirbnbPayous
       "総収入" => "total_income",
       "宿泊税" => "accommodation_tax",
       "Airbnb remitted tax" => "airbnb_remitted_tax",
+      "Airbnbが納税する自動設定された税金" => "airbnb_remitted_tax",
       "ホスティング収入年度" => "hosting_revenue_fiscal_year"
     }.freeze
 

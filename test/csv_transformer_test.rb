@@ -67,4 +67,16 @@ class CsvTransformerTest < Minitest::Test
     assert_nil rows.first["details"]
     assert_nil rows.first["amount"]
   end
+
+  def test_maps_new_japanese_tax_column
+    csv = <<~CSV
+      日付,Airbnbが納税する自動設定された税金,金額
+      03/12/2026,12.34,100.00
+    CSV
+
+    rows = @transformer.call(csv)
+
+    assert_equal BigDecimal("12.34"), rows.first["airbnb_remitted_tax"]
+    assert_equal BigDecimal("100.00"), rows.first["amount"]
+  end
 end
