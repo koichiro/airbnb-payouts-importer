@@ -35,3 +35,12 @@ steps:
 
 options:
   logging: CLOUD_LOGGING_ONLY
+
+substitutions:
+  _REGION: "asia-northeast1"
+  _BQ_DATASET_ID: "airbnb_management"
+  _BQ_TABLE_ID: "earnings_cleaned"
+  _SERVICE_NAME: "airbnb-payouts-importer"
+  _TRIGGER_NAME: "airbnb-payouts-importer-trigger"
+  _TRIGGER_BUCKET: "YOUR_GCS_BUCKET_NAME"
+  _SERVICE_ACCOUNT_EMAIL: "YOUR_SERVICE_ACCOUNT_EMAIL"
