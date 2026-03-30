@@ -19,10 +19,18 @@ module AirbnbPayous
       @table_id = table_id
       @staging_table_id = "#{table_id}_staging"
 
-      @logger.info("Initializing BigqueryGateway with project_id: #{@project_id.inspect}, dataset_id: #{@dataset_id.inspect}")
+      @logger.info("Initializing BigqueryGateway with project_id: #{@project_id.inspect}, dataset_id: #{@dataset_id.inspect}, table_id: #{@table_id.inspect}")
 
       if @project_id.nil? || @project_id.empty?
-        raise ArgumentError, "project_id is required but was #{@project_id.inspect}"
+        raise ArgumentError, "project_id is required"
+      end
+
+      if @dataset_id.nil? || @dataset_id.empty?
+        raise ArgumentError, "dataset_id is required"
+      end
+
+      if @table_id.nil? || @table_id.empty?
+        raise ArgumentError, "table_id is required"
       end
 
       @bigquery = bigquery || Google::Cloud::Bigquery.new(project_id: @project_id)
