@@ -17,7 +17,8 @@ module AirbnbPayous
     end
 
     def call(csv_content)
-      rows = CSV.parse(strip_bom(csv_content), headers: true)
+      normalized_content = normalize_encoding(csv_content)
+      rows = CSV.parse(normalized_content, headers: true)
       normalized_headers = rows.headers.map { |header| header.to_s.strip }
       @unmapped_source_columns = normalized_headers.reject { |header| Schema::COLUMN_MAP.key?(header) }
 
