@@ -13,13 +13,20 @@ module AirbnbPayous
     attr_reader :project_id, :dataset_id, :table_id, :staging_table_id
 
     def initialize(project_id:, dataset_id:, table_id:, logger: Logger.new($stdout), bigquery: nil, storage: nil)
+      @logger = logger
       @project_id = project_id
       @dataset_id = dataset_id
       @table_id = table_id
       @staging_table_id = "#{table_id}_staging"
-      @logger = logger
-      @bigquery = bigquery || Google::Cloud::Bigquery.new(project_id: project_id)
-      @storage = storage || Google::Cloud::Storage.new(project_id: project_id)
+
+      @logger.info("Initializing BigqueryGateway with project_id: #{@project_id.inspect}, dataset_id: #{@dataset_id.inspect}")
+
+      if @project_id.nil? || @project_id.empty?
+        raise ArgumentError, "project_id is required but was #{@project_id.inspect}"
+      end
+
+      @bigquery = bigquery || Google::Cloud::Bigquery.new(project_id: @project_id)
+      @storage = storage || Google::Cloud::Storage.new(project_id: @project_id)
     end
 
     def download(bucket_name:, file_name:)
