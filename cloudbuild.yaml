@@ -37,10 +37,10 @@ steps:
     args:
       - -c
       - |
-        SUBSCRIPTION=$(gcloud eventarc triggers describe "${_TRIGGER_NAME}" --location="${_REGION}" --format="value(transport.pubsub.subscription)")
-        if [ ! -z "$SUBSCRIPTION" ]; then
-          echo "Updating subscription ${SUBSCRIPTION} ack-deadline to 600s"
-          gcloud pubsub subscriptions update "${SUBSCRIPTION}" --ack-deadline=600
+        _SUB=$(gcloud eventarc triggers describe "${_TRIGGER_NAME}" --location="${_REGION}" --format="value(transport.pubsub.subscription)" || echo "")
+        if [ ! -z "$${_SUB}" ]; then
+          echo "Updating subscription $${_SUB} ack-deadline to 600s"
+          gcloud pubsub subscriptions update "$${_SUB}" --ack-deadline=600
         fi
 
 options:
