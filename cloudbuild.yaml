@@ -10,7 +10,7 @@ steps:
       - --service-account=${_SERVICE_ACCOUNT_EMAIL}
       - --source=.
       - --no-allow-unauthenticated
-      - --update-env-vars=GCP_PROJECT_ID=${PROJECT_ID},BQ_DATASET_ID=${_BQ_DATASET_ID},BQ_TABLE_ID=${_BQ_TABLE_ID}
+      - --update-env-vars=GCP_PROJECT_ID=${PROJECT_ID},BQ_DATASET_ID=${_BQ_DATASET_ID},BQ_TABLE_ID=${_BQ_TABLE_ID},SLACK_WEBHOOK_URL=${_SLACK_WEBHOOK_URL}
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: bash
     args:
@@ -44,3 +44,4 @@ substitutions:
   _TRIGGER_NAME: "airbnb-payouts-importer-trigger"
   _TRIGGER_BUCKET: "REQUIRED_SET_IN_TRIGGER_UI"
   _SERVICE_ACCOUNT_EMAIL: "REQUIRED_SET_IN_TRIGGER_UI"
+  _SLACK_WEBHOOK_URL: ""

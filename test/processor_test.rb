@@ -17,9 +17,10 @@ class ProcessorTest < Minitest::Test
   class FakeGateway
     attr_reader :download_calls, :load_calls
 
-    def initialize(csv: "csv", error: nil)
+    def initialize(csv: "csv", error: nil, result: { mode: :merge, inserted_count: 1, updated_count: 2 })
       @csv = csv
       @error = error
+      @result = result
       @download_calls = []
       @load_calls = []
     end
@@ -33,6 +34,24 @@ class ProcessorTest < Minitest::Test
 
     def load_and_merge!(rows:)
       @load_calls << { rows: rows }
+      @result
+    end
+  end
+
+  class FakeNotifier
+    attr_reader :success_calls, :failure_calls
+
+    def initialize
+      @success_calls = []
+      @failure_calls = []
+    end
+
+    def notify_success(file_name:, mode:, inserted_count:, updated_count:)
+      @success_calls << { file_name:, mode:, inserted_count:, updated_count: }
+    end
+
+    def notify_failure(file_name:, error_message:)
+      @failure_calls << { file_name:, error_message: }
     end
   end
 
@@ -40,11 +59,13 @@ class ProcessorTest < Minitest::Test
     @rows = [{ "event_date" => Date.new(2026, 3, 12), "row_id" => "abc" }]
     @transformer = FakeTransformer.new(@rows)
     @gateway = FakeGateway.new
+    @notifier = FakeNotifier.new
     @log_output = StringIO.new
     @logger = Logger.new(@log_output)
     @processor = AirbnbPayous::Processor.new(
       transformer: @transformer,
       gateway: @gateway,
+      notifier: @notifier,
       logger: @logger
     )
   end
@@ -55,6 +76,10 @@ class ProcessorTest < Minitest::Test
     assert_equal [{ bucket_name: "bucket", file_name: "file.csv" }], @gateway.download_calls
     assert_equal "csv", @transformer.received_csv
     assert_equal [{ rows: @rows }], @gateway.load_calls
+    
+    assert_equal 1, @notifier.success_calls.length
+    assert_equal "file.csv", @notifier.success_calls.first[:file_name]
+    assert_equal :merge, @notifier.success_calls.first[:mode]
   end
 
   def test_extracts_cloudevent_data_payloads
@@ -62,26 +87,30 @@ class ProcessorTest < Minitest::Test
 
     assert_includes @log_output.string, "Executing from structured CloudEvent payload"
     assert_equal [{ bucket_name: "bucket", file_name: "file.csv" }], @gateway.download_calls
+    assert_equal 1, @notifier.success_calls.length
   end
 
   def test_skips_non_csv_files
     assert_nil @processor.call({ "bucket" => "bucket", "name" => "file.txt" })
     assert_empty @gateway.download_calls
     assert_empty @gateway.load_calls
+    assert_empty @notifier.success_calls
   end
 
-  def test_reraises_failures_after_logging
+  def test_notifies_failure_on_error
     processor = AirbnbPayous::Processor.new(
       transformer: @transformer,
       gateway: FakeGateway.new(error: RuntimeError.new("boom")),
+      notifier: @notifier,
       logger: @logger
     )
 
-    error = assert_raises(RuntimeError) do
+    assert_raises(RuntimeError) do
       processor.call({ "bucket" => "bucket", "name" => "file.csv" })
     end
 
-    assert_equal "boom", error.message
-    assert_includes @log_output.string, "Failed to process Airbnb CSV: boom"
+    assert_equal 1, @notifier.failure_calls.length
+    assert_equal "file.csv", @notifier.failure_calls.first[:file_name]
+    assert_equal "boom", @notifier.failure_calls.first[:error_message]
   end
 end

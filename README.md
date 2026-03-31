@@ -85,6 +85,9 @@ REGION=asia-northeast1 \
 PROJECT_ID=your-project-id \
 TRIGGER_BUCKET=your-bucket \
 SERVICE_ACCOUNT_EMAIL=etl-runner@your-project-id.iam.gserviceaccount.com \
+BQ_DATASET_ID=airbnb_management \
+BQ_TABLE_ID=earnings_cleaned \
+SLACK_WEBHOOK_URL=https://hooks.slack.com/services/... \
 ./deploy.sh
 ```
 
@@ -94,7 +97,15 @@ SERVICE_ACCOUNT_EMAIL=etl-runner@your-project-id.iam.gserviceaccount.com \
 2. Upload the CSV to your designated GCS bucket.
 3. Eventarc sends the object-finalized event to Cloud Run.
 4. The service cleans, stages, and merges the data into BigQuery.
-5. Analyze your data in BigQuery, Google Sheets, or Looker Studio.
+5. Receive a notification in Slack (if configured).
+6. Analyze your data in BigQuery, Google Sheets, or Looker Studio.
+
+### Slack Notifications
+
+When `SLACK_WEBHOOK_URL` is provided, the pipeline sends a rich attachment message to your channel:
+
+*   **Success**: Shows the filename, import mode (Full Import for new tables vs. Merge Import for existing tables), and the count of inserted and updated rows.
+*   **Failure**: Sends an alert with the error message and filename to help you troubleshoot quickly (e.g., schema mismatches or permission issues).
 
 ## Notes
 
