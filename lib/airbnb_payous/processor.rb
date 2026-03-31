@@ -51,15 +51,10 @@ module AirbnbPayous
 
     def default_gateway
       BigqueryGateway.new(
-        project_id: env_value("GCP_PROJECT_ID"),
-        dataset_id: env_value("BQ_DATASET_ID", "airbnb_management"),
-        table_id: env_value("BQ_TABLE_ID", "earnings_cleaned")
+        project_id: ENV["GCP_PROJECT_ID"],
+        dataset_id: ENV["BQ_DATASET_ID"],
+        table_id: ENV["BQ_TABLE_ID"]
       )
-    end
-
-    def env_value(key, default = nil)
-      val = ENV[key]
-      (val.nil? || val.empty?) ? default : val
     end
   end
 end
