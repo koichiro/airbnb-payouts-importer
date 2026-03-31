@@ -64,9 +64,11 @@ module AirbnbPayous
       load_job.wait_until_done!
       raise load_job.error if load_job.failed?
 
-      @logger.info("Loaded #{rows.length} rows to staging table.")
+      total_rows = load_job.output_rows
+      @logger.info("Loaded #{total_rows} rows to staging table.")
 
       target_table = dataset.table(table_id)
+      result = { inserted_count: 0, updated_count: 0 }
 
       if target_table.nil?
         @logger.info("Target table #{qualified_table_name(table_id)} not found. Creating it for the first time.")
@@ -74,6 +76,9 @@ module AirbnbPayous
         copy_job.wait_until_done!
         raise copy_job.error if copy_job.failed?
         @logger.info("Target table created successfully.")
+        
+        result[:mode] = :create_table
+        result[:inserted_count] = total_rows
       else
         merge_sql = build_merge_query(rows.first.keys)
         query_job = @bigquery.query_job(merge_sql)
@@ -83,7 +88,12 @@ module AirbnbPayous
         inserted_count = query_job.respond_to?(:dml_stats) && query_job.dml_stats ? query_job.dml_stats.inserted_row_count.to_i : 0
         updated_count = query_job.respond_to?(:dml_stats) && query_job.dml_stats ? query_job.dml_stats.updated_row_count.to_i : 0
         @logger.info("MERGE operation completed. Rows inserted: #{inserted_count}, Rows updated: #{updated_count}.")
+
+        result[:mode] = :merge
+        result[:inserted_count] = inserted_count
+        result[:updated_count] = updated_count
       end
+      result
     ensure
       temp_file&.close!
       delete_staging_table(dataset)

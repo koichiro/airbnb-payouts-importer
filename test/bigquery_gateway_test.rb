@@ -63,8 +63,9 @@ class BigqueryGatewayTest < Minitest::Test
   class FakeLoadJob
     attr_reader :waited
 
-    def initialize
+    def initialize(output_rows: 1)
       @waited = false
+      @output_rows = output_rows
     end
 
     def wait_until_done!
@@ -74,21 +75,31 @@ class BigqueryGatewayTest < Minitest::Test
     def failed?
       false
     end
+
+    def output_rows
+      @output_rows
+    end
+
+    def error; nil; end
   end
 
-  class FakeCopyJob < FakeLoadJob; end
+  class FakeCopyJob < FakeLoadJob
+    def error; nil; end
+  end
 
   class FakeQueryJob < FakeLoadJob
     attr_reader :sql
 
-    def initialize
-      super
-      @dml_stats = Struct.new(:inserted_row_count, :updated_row_count).new(1, 0)
+    def initialize(inserted: 1, updated: 0)
+      super()
+      @dml_stats = Struct.new(:inserted_row_count, :updated_row_count).new(inserted, updated)
     end
 
     def dml_stats
       @dml_stats
     end
+
+    def error; nil; end
   end
 
   class FakeTable
@@ -109,9 +120,10 @@ class BigqueryGatewayTest < Minitest::Test
   class FakeDataset
     attr_reader :load_job_calls, :table_requests, :loaded_json, :schema_fields
 
-    def initialize(target_table:, staging_table:)
+    def initialize(target_table:, staging_table:, output_rows: 1)
       @target_table = target_table
       @staging_table = staging_table
+      @output_rows = output_rows
       @load_job_calls = []
       @table_requests = []
       @loaded_json = []
@@ -128,7 +140,7 @@ class BigqueryGatewayTest < Minitest::Test
       end
       yield updater
       @schema_fields = schema.fields
-      FakeLoadJob.new
+      FakeLoadJob.new(output_rows: @output_rows)
     end
 
     def table(name)
@@ -214,7 +226,11 @@ class BigqueryGatewayTest < Minitest::Test
       storage: @storage
     )
 
-    gateway.load_and_merge!(rows: @rows)
+    result = gateway.load_and_merge!(rows: @rows)
+
+    assert_equal :create_table, result[:mode]
+    assert_equal @rows.length, result[:inserted_count]
+    assert_equal 0, result[:updated_count]
 
     assert_equal 1, bigquery.copy_job_calls.length
     assert_equal "project.dataset.table_staging", bigquery.copy_job_calls.first[:source]
@@ -224,7 +240,11 @@ class BigqueryGatewayTest < Minitest::Test
   end
 
   def test_merges_into_an_existing_target_table
-    @gateway.load_and_merge!(rows: @rows)
+    result = @gateway.load_and_merge!(rows: @rows)
+
+    assert_equal :merge, result[:mode]
+    assert_equal 1, result[:inserted_count]
+    assert_equal 0, result[:updated_count]
 
     assert_equal 1, @bigquery.query_job_calls.length
     assert_includes @bigquery.query_job_calls.first, "MERGE `project.dataset.table`"

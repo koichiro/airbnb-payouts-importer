@@ -4,16 +4,19 @@ require "logger"
 
 require_relative "bigquery_gateway"
 require_relative "csv_transformer"
+require_relative "slack_notifier"
 
 module AirbnbPayous
   class Processor
     def initialize(
       transformer: CsvTransformer.new,
       gateway: nil,
+      notifier: SlackNotifier.new,
       logger: Logger.new($stdout)
     )
       @transformer = transformer
       @gateway = gateway || default_gateway
+      @notifier = notifier
       @logger = logger
     end
 
@@ -29,11 +32,19 @@ module AirbnbPayous
 
       csv_content = @gateway.download(bucket_name:, file_name:)
       rows = @transformer.call(csv_content)
-      @gateway.load_and_merge!(rows:)
+      result = @gateway.load_and_merge!(rows:)
+
+      @notifier.notify_success(
+        file_name: file_name,
+        mode: result[:mode],
+        inserted_count: result[:inserted_count],
+        updated_count: result[:updated_count]
+      )
 
       nil
     rescue StandardError => e
       @logger.error("Failed to process Airbnb CSV: #{e.message}")
+      @notifier.notify_failure(file_name: file_name || "unknown", error_message: e.message)
       raise e
     end
 
