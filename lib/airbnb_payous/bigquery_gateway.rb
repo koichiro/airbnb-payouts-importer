@@ -77,9 +77,10 @@ module AirbnbPayous
       if target_table.nil?
         @logger.info("Target table #{qualified_table_name(table_id)} does not exist. Path: :create_table")
         copy_job = @bigquery.copy_job qualified_table_name(staging_table_id), qualified_table_name(table_id), write: "truncate"
+        @logger.info("Started copy_job (ID: #{copy_job.job_id}). Waiting for completion...")
         copy_job.wait_until_done!
         raise copy_job.error if copy_job.failed?
-        @logger.info("Target table created via copy_job.")
+        @logger.info("Target table created successfully via copy_job.")
         
         result[:mode] = :create_table
         result[:inserted_count] = total_rows_loaded
@@ -87,19 +88,21 @@ module AirbnbPayous
         @logger.info("Target table #{qualified_table_name(table_id)} exists. Path: :merge")
         merge_sql = build_merge_query(rows.first.keys)
         query_job = @bigquery.query_job(merge_sql)
+        @logger.info("Started query_job (ID: #{query_job.job_id}). Waiting for completion...")
         query_job.wait_until_done!
         raise query_job.error if query_job.failed?
 
-        # Capture DML stats
-        if query_job.respond_to?(:dml_stats) && query_job.dml_stats
+        # Capture DML stats with robust fallbacks
+        if query_job.dml_stats
           result[:inserted_count] = query_job.dml_stats.inserted_row_count.to_i
           result[:updated_count] = query_job.dml_stats.updated_row_count.to_i
           @logger.info("DML Stats - Inserted: #{result[:inserted_count]}, Updated: #{result[:updated_count]}")
-        else
-          # Fallback: if dml_stats is nil, try to get from raw statistics or use total affected
-          affected = query_job.num_dml_affected_rows.to_i
-          @logger.warn("DML Stats not found. num_dml_affected_rows: #{affected}")
+        elsif (affected = query_job.num_dml_affected_rows.to_i) >= 0
+          # For our current MERGE query (which only has INSERT), all affected rows are inserts
           result[:inserted_count] = affected
+          @logger.info("DML Stats not found, but num_dml_affected_rows is #{affected}. Assuming all are inserts.")
+        else
+          @logger.warn("No DML statistics available for query job #{query_job.job_id}.")
         end
 
         result[:mode] = :merge

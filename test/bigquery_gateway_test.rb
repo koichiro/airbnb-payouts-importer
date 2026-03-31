@@ -61,11 +61,12 @@ class BigqueryGatewayTest < Minitest::Test
   end
 
   class FakeLoadJob
-    attr_reader :waited
+    attr_reader :waited, :job_id
 
-    def initialize(output_rows: 1)
+    def initialize(output_rows: 1, job_id: "job_123")
       @waited = false
       @output_rows = output_rows
+      @job_id = job_id
     end
 
     def wait_until_done!
