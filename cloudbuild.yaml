@@ -32,6 +32,16 @@ steps:
       - --event-filters=type=google.cloud.storage.object.v1.finalized
       - --event-filters=bucket=${_TRIGGER_BUCKET}
       - --service-account=${_SERVICE_ACCOUNT_EMAIL}
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        SUBSCRIPTION=$(gcloud eventarc triggers describe "${_TRIGGER_NAME}" --location="${_REGION}" --format="value(transport.pubsub.subscription)")
+        if [ ! -z "$SUBSCRIPTION" ]; then
+          echo "Updating subscription ${SUBSCRIPTION} ack-deadline to 600s"
+          gcloud pubsub subscriptions update "${SUBSCRIPTION}" --ack-deadline=600
+        fi
 
 options:
   logging: CLOUD_LOGGING_ONLY
