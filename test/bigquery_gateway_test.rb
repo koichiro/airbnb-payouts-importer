@@ -99,6 +99,10 @@ class BigqueryGatewayTest < Minitest::Test
       @dml_stats
     end
 
+    def num_dml_affected_rows
+      @dml_stats.inserted_row_count + @dml_stats.updated_row_count
+    end
+
     def error; nil; end
   end
 
