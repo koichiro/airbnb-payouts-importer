@@ -92,18 +92,7 @@ module AirbnbPayous
         query_job.wait_until_done!
         raise query_job.error if query_job.failed?
 
-        # Capture DML stats with robust fallbacks
-        if query_job.dml_stats
-          result[:inserted_count] = query_job.dml_stats.inserted_row_count.to_i
-          result[:updated_count] = query_job.dml_stats.updated_row_count.to_i
-          @logger.info("DML Stats - Inserted: #{result[:inserted_count]}, Updated: #{result[:updated_count]}")
-        elsif (affected = query_job.num_dml_affected_rows.to_i) >= 0
-          # For our current MERGE query (which only has INSERT), all affected rows are inserts
-          result[:inserted_count] = affected
-          @logger.info("DML Stats not found, but num_dml_affected_rows is #{affected}. Assuming all are inserts.")
-        else
-          @logger.warn("No DML statistics available for query job #{query_job.job_id}.")
-        end
+        result.merge!(extract_dml_counts(query_job))
 
         result[:mode] = :merge
       end
@@ -170,6 +159,38 @@ module AirbnbPayous
         WHEN NOT MATCHED THEN
           INSERT (#{columns_list}) VALUES (#{source_columns_list})
       SQL
+    end
+
+    def extract_dml_counts(query_job)
+      inserted_count = extract_query_job_metric(query_job, :inserted_row_count)
+      updated_count = extract_query_job_metric(query_job, :updated_row_count)
+
+      if inserted_count || updated_count
+        inserted_count ||= 0
+        updated_count ||= 0
+        @logger.info("DML row counts - Inserted: #{inserted_count}, Updated: #{updated_count}")
+        return { inserted_count:, updated_count: }
+      end
+
+      affected = extract_query_job_metric(query_job, :num_dml_affected_rows)
+      if affected
+        # Current MERGE only inserts new rows, so affected rows can be treated as inserts.
+        @logger.info("DML row counts unavailable; using num_dml_affected_rows=#{affected} as inserted count.")
+        return { inserted_count: affected, updated_count: 0 }
+      end
+
+      @logger.warn("No DML statistics available for query job #{query_job.job_id}.")
+      { inserted_count: 0, updated_count: 0 }
+    end
+
+    def extract_query_job_metric(query_job, method_name)
+      return nil unless query_job.respond_to?(method_name)
+
+      value = query_job.public_send(method_name)
+      value.nil? ? nil : value.to_i
+    rescue StandardError => e
+      @logger.warn("Failed to read #{method_name} from query job #{query_job.job_id}: #{e.message}")
+      nil
     end
 
     def delete_staging_table(dataset)
