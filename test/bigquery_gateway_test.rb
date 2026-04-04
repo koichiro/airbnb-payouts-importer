@@ -91,20 +91,49 @@ class BigqueryGatewayTest < Minitest::Test
   class FakeQueryJob < FakeLoadJob
     attr_reader :sql
 
-    def initialize(inserted: 1, updated: 0)
+    def initialize(inserted: 1, updated: 0, supports_dml_stats: true, supports_row_counts: true, supports_affected_rows: true)
       super()
+      @inserted = inserted
+      @updated = updated
+      @supports_dml_stats = supports_dml_stats
+      @supports_row_counts = supports_row_counts
+      @supports_affected_rows = supports_affected_rows
       @dml_stats = Struct.new(:inserted_row_count, :updated_row_count).new(inserted, updated)
     end
 
     def dml_stats
+      raise NoMethodError, "undefined method 'dml_stats'" unless @supports_dml_stats
+
       @dml_stats
     end
 
     def num_dml_affected_rows
-      @dml_stats.inserted_row_count + @dml_stats.updated_row_count
+      raise NoMethodError, "undefined method 'num_dml_affected_rows'" unless @supports_affected_rows
+
+      @inserted + @updated
+    end
+
+    def inserted_row_count
+      raise NoMethodError, "undefined method 'inserted_row_count'" unless @supports_row_counts
+
+      @inserted
+    end
+
+    def updated_row_count
+      raise NoMethodError, "undefined method 'updated_row_count'" unless @supports_row_counts
+
+      @updated
     end
 
     def error; nil; end
+
+    def respond_to?(method_name, include_private = false)
+      return @supports_dml_stats if method_name == :dml_stats
+      return @supports_row_counts if [:inserted_row_count, :updated_row_count].include?(method_name)
+      return @supports_affected_rows if method_name == :num_dml_affected_rows
+
+      super
+    end
   end
 
   class FakeTable
@@ -160,9 +189,10 @@ class BigqueryGatewayTest < Minitest::Test
   class FakeBigquery
     attr_reader :dataset_calls, :create_dataset_calls, :copy_job_calls, :query_job_calls
 
-    def initialize(dataset:, created_dataset: nil)
+    def initialize(dataset:, created_dataset: nil, query_job: nil)
       @dataset = dataset
       @created_dataset = created_dataset || dataset
+      @query_job = query_job || FakeQueryJob.new
       @dataset_calls = []
       @create_dataset_calls = []
       @copy_job_calls = []
@@ -186,7 +216,7 @@ class BigqueryGatewayTest < Minitest::Test
 
     def query_job(sql)
       @query_job_calls << sql
-      FakeQueryJob.new
+      @query_job
     end
   end
 
@@ -254,6 +284,48 @@ class BigqueryGatewayTest < Minitest::Test
     assert_equal 1, @bigquery.query_job_calls.length
     assert_includes @bigquery.query_job_calls.first, "MERGE `project.dataset.table`"
     assert_empty @bigquery.copy_job_calls
+  end
+
+  def test_merges_with_query_job_that_exposes_row_counts_but_not_dml_stats
+    bigquery = FakeBigquery.new(
+      dataset: @dataset,
+      query_job: FakeQueryJob.new(inserted: 2, updated: 3, supports_dml_stats: false, supports_row_counts: true)
+    )
+    gateway = AirbnbPayous::BigqueryGateway.new(
+      project_id: "project",
+      dataset_id: "dataset",
+      table_id: "table",
+      logger: @logger,
+      bigquery: bigquery,
+      storage: @storage
+    )
+
+    result = gateway.load_and_merge!(rows: @rows)
+
+    assert_equal :merge, result[:mode]
+    assert_equal 2, result[:inserted_count]
+    assert_equal 3, result[:updated_count]
+  end
+
+  def test_merges_with_query_job_that_only_exposes_affected_rows
+    bigquery = FakeBigquery.new(
+      dataset: @dataset,
+      query_job: FakeQueryJob.new(inserted: 4, updated: 0, supports_dml_stats: false, supports_row_counts: false, supports_affected_rows: true)
+    )
+    gateway = AirbnbPayous::BigqueryGateway.new(
+      project_id: "project",
+      dataset_id: "dataset",
+      table_id: "table",
+      logger: @logger,
+      bigquery: bigquery,
+      storage: @storage
+    )
+
+    result = gateway.load_and_merge!(rows: @rows)
+
+    assert_equal :merge, result[:mode]
+    assert_equal 4, result[:inserted_count]
+    assert_equal 0, result[:updated_count]
   end
 
   def test_serializes_dates_and_decimals_for_bigquery_load_jobs
