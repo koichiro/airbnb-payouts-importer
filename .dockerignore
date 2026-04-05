@@ -1,0 +1,13 @@
+.git
+.bundle
+vendor/bundle
+coverage
+tmp
+log
+.DS_Store
+.env
+.env.*
+session
+test
+plan
+airbnb_*.csv
