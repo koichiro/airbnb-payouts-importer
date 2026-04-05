@@ -161,10 +161,10 @@ Cloud Run サービスアカウント:
 
 ## Deployment Shape
 
-デプロイは `deploy.sh` と `cloudbuild.yaml` を基準にする。
+デプロイは `deploy.sh` / `scripts/deploy.sh` と `cloudbuild.yaml` を基準にする。
 
 - `gcloud run deploy --source .`
-- Eventarc trigger 作成
+- Eventarc trigger 作成は `scripts/create_trigger.sh` で別実行
 - Cloud Run 環境変数注入
 - 必要に応じて Slack webhook を設定
 

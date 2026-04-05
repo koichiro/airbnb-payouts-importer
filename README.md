@@ -74,21 +74,31 @@ bundle exec rake test
 ```
 
 ### 4. Deployment
-Deploy using the provided `deploy.sh` or through a CI/CD pipeline like Cloud Build (see `cloudbuild.yaml`).
+Deploy the Cloud Run service with `deploy.sh` or through Cloud Build (`cloudbuild.yaml`). Create the Eventarc trigger separately with `scripts/create_trigger.sh`.
 
 ```bash
-chmod +x deploy.sh
+chmod +x deploy.sh scripts/create_trigger.sh
 
+SERVICE_NAME=airbnb-payouts-import \
+REGION=asia-northeast1 \
+PROJECT_ID=your-project-id \
+SERVICE_ACCOUNT_EMAIL=etl-runner@your-project-id.iam.gserviceaccount.com \
+BQ_DATASET_ID=airbnb_management \
+BQ_TABLE_ID=earnings_cleaned \
+SLACK_WEBHOOK_URL=https://hooks.slack.com/services/... \
+./deploy.sh
+```
+
+Create or update the Eventarc trigger separately:
+
+```bash
 SERVICE_NAME=airbnb-payouts-import \
 TRIGGER_NAME=airbnb-payouts-import-gcs-finalized \
 REGION=asia-northeast1 \
 PROJECT_ID=your-project-id \
 TRIGGER_BUCKET=your-bucket \
 SERVICE_ACCOUNT_EMAIL=etl-runner@your-project-id.iam.gserviceaccount.com \
-BQ_DATASET_ID=airbnb_management \
-BQ_TABLE_ID=earnings_cleaned \
-SLACK_WEBHOOK_URL=https://hooks.slack.com/services/... \
-./deploy.sh
+./scripts/create_trigger.sh
 ```
 
 ## 📊 Usage

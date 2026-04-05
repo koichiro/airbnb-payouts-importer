@@ -11,37 +11,6 @@ steps:
       - --source=.
       - --no-allow-unauthenticated
       - --update-env-vars=GCP_PROJECT_ID=${PROJECT_ID},BQ_DATASET_ID=${_BQ_DATASET_ID},BQ_TABLE_ID=${_BQ_TABLE_ID},SLACK_WEBHOOK_URL=${_SLACK_WEBHOOK_URL}
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    entrypoint: bash
-    args:
-      - -c
-      - |
-        if gcloud eventarc triggers describe "${_TRIGGER_NAME}" --location="${_REGION}" >/dev/null 2>&1; then
-          gcloud eventarc triggers delete "${_TRIGGER_NAME}" --location="${_REGION}" --quiet
-        fi
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    args:
-      - gcloud
-      - eventarc
-      - triggers
-      - create
-      - ${_TRIGGER_NAME}
-      - --location=${_REGION}
-      - --destination-run-service=${_SERVICE_NAME}
-      - --destination-run-region=${_REGION}
-      - --event-filters=type=google.cloud.storage.object.v1.finalized
-      - --event-filters=bucket=${_TRIGGER_BUCKET}
-      - --service-account=${_SERVICE_ACCOUNT_EMAIL}
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    entrypoint: bash
-    args:
-      - -c
-      - |
-        _SUB=$(gcloud eventarc triggers describe "${_TRIGGER_NAME}" --location="${_REGION}" --format="value(transport.pubsub.subscription)" || echo "")
-        if [ ! -z "$${_SUB}" ]; then
-          echo "Updating subscription $${_SUB} ack-deadline to 600s"
-          gcloud pubsub subscriptions update "$${_SUB}" --ack-deadline=600
-        fi
 
 options:
   logging: CLOUD_LOGGING_ONLY
@@ -51,7 +20,5 @@ substitutions:
   _BQ_DATASET_ID: "REQUIRED_SET_IN_TRIGGER_UI"
   _BQ_TABLE_ID: "REQUIRED_SET_IN_TRIGGER_UI"
   _SERVICE_NAME: "airbnb-payouts-importer"
-  _TRIGGER_NAME: "airbnb-payouts-importer-trigger"
-  _TRIGGER_BUCKET: "REQUIRED_SET_IN_TRIGGER_UI"
   _SERVICE_ACCOUNT_EMAIL: "REQUIRED_SET_IN_TRIGGER_UI"
   _SLACK_WEBHOOK_URL: ""
