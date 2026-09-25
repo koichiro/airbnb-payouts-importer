@@ -2,6 +2,7 @@
 
 require "bigdecimal"
 require "date"
+require "google/apis/bigquery_v2"
 require "logger"
 require "stringio"
 
@@ -9,6 +10,12 @@ require_relative "test_helper"
 require_relative "../lib/airbnb_payous/bigquery_gateway"
 
 class BigqueryGatewayTest < Minitest::Test
+  def test_google_bigquery_api_models_can_deserialize_json
+    dataset = Google::Apis::BigqueryV2::Dataset.from_json('{"kind":"bigquery#dataset"}')
+
+    assert_equal "bigquery#dataset", dataset.kind
+  end
+
   class FakeStorage
     attr_reader :bucket_calls
 
