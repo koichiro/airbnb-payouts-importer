@@ -5,3 +5,8 @@
 /.ruby-lsp
 __pycache__/
 *.log
+
+# Local investigation artifacts and production data exports
+/.session
+/airbnb_*.csv
+/downloaded-logs-*.json
