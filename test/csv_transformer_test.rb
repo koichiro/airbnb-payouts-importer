@@ -68,7 +68,7 @@ class CsvTransformerTest < Minitest::Test
     rows = @transformer.call(csv)
 
     assert_equal BigDecimal("-1234.50"), rows.first["amount"]
-    assert_equal BigDecimal("4692"), rows.first["service_fee"]
+    assert_equal BigDecimal(4692), rows.first["service_fee"]
   end
 
   def test_rejects_invalid_numeric_grouping_with_a_safe_warning

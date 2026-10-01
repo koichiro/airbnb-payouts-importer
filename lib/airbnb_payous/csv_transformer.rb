@@ -129,7 +129,7 @@ module AirbnbPayous
     end
 
     def ensure_schema_columns!(row)
-      Schema::JOB_SCHEMA.each do |name, type,|
+      Schema::JOB_SCHEMA.each do |name, type|
         row[name] = Schema.default_value(type) unless row.key?(name)
       end
     end

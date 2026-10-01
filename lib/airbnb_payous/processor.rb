@@ -50,7 +50,7 @@ module AirbnbPayous
       )
 
       nil
-    rescue StandardError => e
+    rescue => e
       @logger.error("Failed to process Airbnb CSV: #{e.message}")
       @notifier.notify_failure(file_name: file_name || "unknown", error_message: e.message)
       raise e

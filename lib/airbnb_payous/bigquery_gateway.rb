@@ -92,12 +92,12 @@ module AirbnbPayous
       # Use job output rows, fallback to input rows count if zero (sometimes stats are delayed)
       total_rows_loaded = load_job.output_rows.to_i
       total_rows_loaded = rows.length if total_rows_loaded.zero?
-      
+
       @logger.info("Load job finished. output_rows: #{load_job.output_rows}, rows.length: #{rows.length}. Using #{total_rows_loaded} as reference.")
 
       # Fetch a fresh table reference to avoid caching issues
       target_table = dataset.table(table_id)
-      result = { inserted_count: 0, updated_count: 0 }
+      result = {inserted_count: 0, updated_count: 0}
 
       if target_table.nil?
         @logger.info("Target table #{qualified_table_name(table_id)} does not exist. Path: :create_table")
@@ -106,7 +106,7 @@ module AirbnbPayous
         copy_job.wait_until_done!
         raise copy_job.error if copy_job.failed?
         @logger.info("Target table created successfully via copy_job.")
-        
+
         result[:mode] = :create_table
         result[:inserted_count] = total_rows_loaded
       else
@@ -176,7 +176,7 @@ module AirbnbPayous
     end
 
     def map_schema_mode(mode)
-      mode == :required ? :required : :nullable
+      (mode == :required) ? :required : :nullable
     end
 
     def build_merge_query(columns, staging_table_id:)
@@ -310,26 +310,26 @@ module AirbnbPayous
         inserted_count ||= 0
         updated_count ||= 0
         @logger.info("DML row counts - Inserted: #{inserted_count}, Updated: #{updated_count}")
-        return { inserted_count:, updated_count: }
+        return {inserted_count:, updated_count:}
       end
 
       affected = extract_query_job_metric(query_job, :num_dml_affected_rows)
       if affected
         # Current MERGE only inserts new rows, so affected rows can be treated as inserts.
         @logger.info("DML row counts unavailable; using num_dml_affected_rows=#{affected} as inserted count.")
-        return { inserted_count: affected, updated_count: 0 }
+        return {inserted_count: affected, updated_count: 0}
       end
 
       @logger.warn("No DML statistics available for query job #{query_job.job_id}.")
-      { inserted_count: 0, updated_count: 0 }
+      {inserted_count: 0, updated_count: 0}
     end
 
     def extract_query_job_metric(query_job, method_name)
       return nil unless query_job.respond_to?(method_name)
 
       value = query_job.public_send(method_name)
-      value.nil? ? nil : value.to_i
-    rescue StandardError => e
+      value&.to_i
+    rescue => e
       @logger.warn("Failed to read #{method_name} from query job #{query_job.job_id}: #{e.message}")
       nil
     end
@@ -340,7 +340,7 @@ module AirbnbPayous
       staging_table = dataset.table(staging_table_id)
       staging_table&.delete
       @logger.info("Staging table cleaned up.")
-    rescue StandardError => e
+    rescue => e
       @logger.warn("Failed to delete staging table #{qualified_table_name(staging_table_id)}: #{e.message}")
     end
   end

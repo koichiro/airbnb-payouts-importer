@@ -120,7 +120,7 @@ class CumulativeSnapshotTest < Minitest::Test
       AirbnbPayous::CumulativeSnapshot.build(
         file_name: "airbnb_01_2026-08_2026.csv",
         content: "csv-content",
-        rows: [{ "event_date" => nil }],
+        rows: [{"event_date" => nil}],
         source_generation: 123,
         source_created_at: Time.now.utc
       )
@@ -132,6 +132,6 @@ class CumulativeSnapshotTest < Minitest::Test
   private
 
   def rows_for(*dates)
-    dates.map { |date| { "event_date" => date } }
+    dates.map { |date| {"event_date" => date} }
   end
 end

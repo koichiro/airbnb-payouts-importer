@@ -17,3 +17,7 @@ group :test do
   gem "rake", "~> 13.4"
   gem "simplecov", "~> 1.3"
 end
+
+group :development, :test do
+  gem "standard", "~> 1.56"
+end

@@ -17,7 +17,7 @@ class ProcessorTest < Minitest::Test
   class FakeGateway
     attr_reader :download_calls, :load_calls
 
-    def initialize(csv: "csv", error: nil, result: { mode: :merge, inserted_count: 1, updated_count: 2 })
+    def initialize(csv: "csv", error: nil, result: {mode: :merge, inserted_count: 1, updated_count: 2})
       @csv = csv
       @error = error
       @result = result
@@ -28,12 +28,12 @@ class ProcessorTest < Minitest::Test
     def download(bucket_name:, file_name:)
       raise @error if @error
 
-      @download_calls << { bucket_name:, file_name: }
+      @download_calls << {bucket_name:, file_name:}
       @csv
     end
 
     def load_and_merge!(rows:, snapshot: nil)
-      @load_calls << { rows: rows, snapshot: snapshot }
+      @load_calls << {rows: rows, snapshot: snapshot}
       @result
     end
   end
@@ -47,16 +47,16 @@ class ProcessorTest < Minitest::Test
     end
 
     def notify_success(file_name:, mode:, inserted_count:, updated_count:)
-      @success_calls << { file_name:, mode:, inserted_count:, updated_count: }
+      @success_calls << {file_name:, mode:, inserted_count:, updated_count:}
     end
 
     def notify_failure(file_name:, error_message:)
-      @failure_calls << { file_name:, error_message: }
+      @failure_calls << {file_name:, error_message:}
     end
   end
 
   def setup
-    @rows = [{ "event_date" => Date.new(2026, 3, 12), "row_id" => "abc" }]
+    @rows = [{"event_date" => Date.new(2026, 3, 12), "row_id" => "abc"}]
     @transformer = FakeTransformer.new(@rows)
     @gateway = FakeGateway.new
     @notifier = FakeNotifier.new
@@ -71,11 +71,11 @@ class ProcessorTest < Minitest::Test
   end
 
   def test_downloads_transforms_and_loads_csv_from_raw_payload
-    assert_nil @processor.call({ "bucket" => "bucket", "name" => "file.csv" })
+    assert_nil @processor.call({"bucket" => "bucket", "name" => "file.csv"})
 
-    assert_equal [{ bucket_name: "bucket", file_name: "file.csv" }], @gateway.download_calls
+    assert_equal [{bucket_name: "bucket", file_name: "file.csv"}], @gateway.download_calls
     assert_equal "csv", @transformer.received_csv
-    assert_equal [{ rows: @rows, snapshot: nil }], @gateway.load_calls
+    assert_equal [{rows: @rows, snapshot: nil}], @gateway.load_calls
 
     assert_equal 1, @notifier.success_calls.length
     assert_equal "file.csv", @notifier.success_calls.first[:file_name]
@@ -83,10 +83,10 @@ class ProcessorTest < Minitest::Test
   end
 
   def test_extracts_cloudevent_data_payloads
-    @processor.call({ "data" => { "bucket" => "bucket", "name" => "file.csv" } })
+    @processor.call({"data" => {"bucket" => "bucket", "name" => "file.csv"}})
 
     assert_includes @log_output.string, "Executing from structured CloudEvent payload"
-    assert_equal [{ bucket_name: "bucket", file_name: "file.csv" }], @gateway.download_calls
+    assert_equal [{bucket_name: "bucket", file_name: "file.csv"}], @gateway.download_calls
     assert_equal 1, @notifier.success_calls.length
   end
 
@@ -104,7 +104,7 @@ class ProcessorTest < Minitest::Test
       logger: @logger
     )
 
-    processor.call({ "bucket" => "bucket", "name" => "airbnb_01_2026-08_2026.csv" })
+    processor.call({"bucket" => "bucket", "name" => "airbnb_01_2026-08_2026.csv"})
 
     snapshot = gateway.load_calls.first[:snapshot]
     assert_equal 2026, snapshot.event_year
@@ -113,7 +113,7 @@ class ProcessorTest < Minitest::Test
   end
 
   def test_skips_non_csv_files
-    assert_nil @processor.call({ "bucket" => "bucket", "name" => "file.txt" })
+    assert_nil @processor.call({"bucket" => "bucket", "name" => "file.txt"})
     assert_empty @gateway.download_calls
     assert_empty @gateway.load_calls
     assert_empty @notifier.success_calls
@@ -128,7 +128,7 @@ class ProcessorTest < Minitest::Test
     )
 
     assert_raises(RuntimeError) do
-      processor.call({ "bucket" => "bucket", "name" => "file.csv" })
+      processor.call({"bucket" => "bucket", "name" => "file.csv"})
     end
 
     assert_equal 1, @notifier.failure_calls.length
