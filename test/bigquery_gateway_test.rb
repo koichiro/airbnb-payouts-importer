@@ -87,15 +87,17 @@ class BigqueryGatewayTest < Minitest::Test
       false
     end
 
-    def output_rows
-      @output_rows
-    end
+    attr_reader :output_rows
 
-    def error; nil; end
+    def error
+      nil
+    end
   end
 
   class FakeCopyJob < FakeLoadJob
-    def error; nil; end
+    def error
+      nil
+    end
   end
 
   class FakeQueryJob < FakeLoadJob
@@ -143,10 +145,12 @@ class BigqueryGatewayTest < Minitest::Test
       @updated
     end
 
-    def error; nil; end
+    def error
+      nil
+    end
 
     def data
-      [{ applied: @reconciliation_applied }]
+      [{applied: @reconciliation_applied}]
     end
 
     def respond_to?(method_name, include_private = false)
@@ -232,7 +236,7 @@ class BigqueryGatewayTest < Minitest::Test
     end
 
     def copy_job(source, destination, write:)
-      @copy_job_calls << { source:, destination:, write: }
+      @copy_job_calls << {source:, destination:, write:}
       FakeCopyJob.new
     end
 
@@ -496,8 +500,7 @@ class BigqueryGatewayTest < Minitest::Test
       :through_date,
       :source_generation,
       :source_created_at,
-      :row_count,
-      keyword_init: true
+      :row_count
     ).new(
       id: "a" * 64,
       event_year: 2026,

@@ -4,7 +4,7 @@ ruby "4.0.7"
 
 gem "cgi"
 gem "csv"
-gem "json"
+gem "json", "~> 3.0"
 gem "rack", "~> 3.2"
 gem "puma", "~> 8.0"
 gem "google-cloud-bigquery", "~> 1.64"

@@ -89,8 +89,6 @@ module AirbnbPayous
         nil
       when :numeric
         nil
-      else
-        nil
       end
     end
   end

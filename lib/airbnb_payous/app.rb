@@ -25,7 +25,7 @@ module AirbnbPayous
     rescue JSON::ParserError => e
       @logger.error("Failed to parse request body: #{e.message}")
       json_response(400, error: "invalid_json")
-    rescue StandardError => e
+    rescue => e
       @logger.error("Request failed: #{e.message}")
       raise e
     end
@@ -43,7 +43,7 @@ module AirbnbPayous
     def json_response(status, body)
       [
         status,
-        { "content-type" => "application/json" },
+        {"content-type" => "application/json"},
         [JSON.generate(body)]
       ]
     end

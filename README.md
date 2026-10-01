@@ -60,6 +60,7 @@ If you deploy the Eventarc trigger from CI/CD or the command line, that identity
 
 ```bash
 bundle install
+BUNDLE_GEMFILE=Gemfile.lint bundle install
 bundle exec puma -C config/puma.rb
 ```
 
@@ -75,7 +76,21 @@ curl http://localhost:8080/up
 bundle exec rake test
 ```
 
-### 4. Dependency Auditing
+### 4. Linting
+
+This project uses [Standard Ruby](https://github.com/standardrb/standard) with its default rules. Lint dependencies use a separate bundle so the linter's RuboCop dependency cannot constrain application dependencies such as `json`. After installing `Gemfile.lint` as shown in Local Setup, run the same lint check as CI with:
+
+```bash
+bundle exec rake lint
+```
+
+Standard Ruby can safely fix many violations automatically:
+
+```bash
+BUNDLE_GEMFILE=Gemfile.lint bundle exec standardrb --fix . Gemfile.lint
+```
+
+### 5. Dependency Auditing
 
 Dependabot checks for Bundler and GitHub Actions updates every week. GitHub Actions also checks `Gemfile.lock` against the [Ruby Advisory Database](https://github.com/rubysec/ruby-advisory-db) on relevant pull requests, pushes to `main`, and a weekly schedule.
 
@@ -86,7 +101,7 @@ gem install bundler-audit --no-document
 bundle-audit check --update
 ```
 
-### 5. Deployment
+### 6. Deployment
 Deploy the Cloud Run service with `deploy.sh` or through Cloud Build (`cloudbuild.yaml`). Create the Eventarc trigger separately with `scripts/create_trigger.sh`.
 
 ```bash

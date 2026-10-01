@@ -114,7 +114,7 @@ DEPENDENCIES
   csv
   google-cloud-bigquery (~> 1.64)
   google-cloud-storage (~> 1.62)
-  json
+  json (~> 3.0)
   minitest (~> 6.0)
   minitest-mock (~> 5.27)
   puma (~> 8.0)

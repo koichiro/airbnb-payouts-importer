@@ -36,14 +36,14 @@ class AppTest < Minitest::Test
   end
 
   def test_processes_post_payloads
-    post "/", JSON.generate({ data: { bucket: "bucket", name: "file.csv" } }), { "CONTENT_TYPE" => "application/json" }
+    post "/", JSON.generate({data: {bucket: "bucket", name: "file.csv"}}), {"CONTENT_TYPE" => "application/json"}
 
     assert_equal 200, last_response.status
-    assert_equal [{ "data" => { "bucket" => "bucket", "name" => "file.csv" } }], @processor.calls
+    assert_equal [{"data" => {"bucket" => "bucket", "name" => "file.csv"}}], @processor.calls
   end
 
   def test_returns_400_for_malformed_json
-    post "/", "{bad", { "CONTENT_TYPE" => "application/json" }
+    post "/", "{bad", {"CONTENT_TYPE" => "application/json"}
 
     assert_equal 400, last_response.status
     assert_includes last_response.body, "invalid_json"

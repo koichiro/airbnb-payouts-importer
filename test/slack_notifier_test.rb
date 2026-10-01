@@ -31,16 +31,16 @@ class SlackNotifierTest < Minitest::Test
     # Stub Net::HTTP.new
     mock_http = Minitest::Mock.new
     mock_response = Net::HTTPSuccess.new(1.0, "200", "OK")
-    
+
     mock_http.expect(:use_ssl=, true, [true])
     mock_http.expect(:request, mock_response) do |request|
       assert_equal "/services/T000/B000/XXX", request.path
       payload = JSON.parse(request.body)
       attachment = payload["attachments"].first
-      
+
       assert_includes attachment["title"], "完了"
       assert_equal "#36a64f", attachment["color"]
-      
+
       fields = attachment["fields"]
       assert_equal "test.csv", fields.find { |f| f["title"] == "ファイル名" }["value"]
       assert_includes fields.find { |f| f["title"] == "インポートモード" }["value"], "フルインポート"
@@ -63,12 +63,12 @@ class SlackNotifierTest < Minitest::Test
   def test_notify_failure_sends_post_request
     mock_http = Minitest::Mock.new
     mock_response = Net::HTTPSuccess.new(1.0, "200", "OK")
-    
+
     mock_http.expect(:use_ssl=, true, [true])
     mock_http.expect(:request, mock_response) do |request|
       payload = JSON.parse(request.body)
       attachment = payload["attachments"].first
-      
+
       assert_includes attachment["title"], "失敗"
       assert_equal "#ff0000", attachment["color"]
       assert_equal "Error message", attachment["fields"].find { |f| f["title"] == "エラー内容" }["value"]
@@ -85,8 +85,10 @@ class SlackNotifierTest < Minitest::Test
   def test_logs_error_on_http_failure
     mock_http = Minitest::Mock.new
     mock_response = Net::HTTPBadRequest.new(1.0, "400", "Bad Request")
-    def mock_response.body; "Missing parameter"; end
-    
+    def mock_response.body
+      "Missing parameter"
+    end
+
     mock_http.expect(:use_ssl=, true, [true])
     mock_http.expect(:request, mock_response, [Net::HTTP::Post])
 
