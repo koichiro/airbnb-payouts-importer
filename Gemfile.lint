@@ -1,0 +1,6 @@
+source "https://rubygems.org"
+
+ruby file: ".ruby-version"
+
+gem "rake", "~> 13.4"
+gem "standard", "~> 1.56"

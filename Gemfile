@@ -4,7 +4,7 @@ ruby "4.0.7"
 
 gem "cgi"
 gem "csv"
-gem "json"
+gem "json", "~> 3.0"
 gem "rack", "~> 3.2"
 gem "puma", "~> 8.0"
 gem "google-cloud-bigquery", "~> 1.64"
@@ -16,8 +16,4 @@ group :test do
   gem "rack-test", "~> 2.1"
   gem "rake", "~> 13.4"
   gem "simplecov", "~> 1.3"
-end
-
-group :development, :test do
-  gem "standard", "~> 1.56"
 end

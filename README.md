@@ -60,6 +60,7 @@ If you deploy the Eventarc trigger from CI/CD or the command line, that identity
 
 ```bash
 bundle install
+BUNDLE_GEMFILE=Gemfile.lint bundle install
 bundle exec puma -C config/puma.rb
 ```
 
@@ -77,7 +78,7 @@ bundle exec rake test
 
 ### 4. Linting
 
-This project uses [Standard Ruby](https://github.com/standardrb/standard) with its default rules. Run the same lint check as CI with:
+This project uses [Standard Ruby](https://github.com/standardrb/standard) with its default rules. Lint dependencies use a separate bundle so the linter's RuboCop dependency cannot constrain application dependencies such as `json`. After installing `Gemfile.lint` as shown in Local Setup, run the same lint check as CI with:
 
 ```bash
 bundle exec rake lint
@@ -86,7 +87,7 @@ bundle exec rake lint
 Standard Ruby can safely fix many violations automatically:
 
 ```bash
-bundle exec standardrb --fix
+BUNDLE_GEMFILE=Gemfile.lint bundle exec standardrb --fix . Gemfile.lint
 ```
 
 ### 5. Dependency Auditing
