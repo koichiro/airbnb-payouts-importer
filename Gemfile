@@ -11,7 +11,7 @@ gem "google-cloud-bigquery", "~> 1.64"
 gem "google-cloud-storage", "~> 1.62"
 
 group :test do
-  gem "minitest", "~> 6.0"
+  gem "minitest", "~> 6.1"
   gem "minitest-mock", "~> 5.27"
   gem "rack-test", "~> 2.3"
   gem "rake", "~> 13.4"
