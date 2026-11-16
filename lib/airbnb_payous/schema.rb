@@ -12,6 +12,9 @@ module AirbnbPayous
       "終了日" => "end_date",
       "泊数" => "number_of_nights",
       "ゲスト" => "guest",
+      "大人" => "number_of_adults",
+      "子ども" => "number_of_children",
+      "乳幼児" => "number_of_infants",
       "リスティング" => "listing_name",
       "詳細" => "details",
       "参照コード" => "reference_code",
@@ -49,10 +52,12 @@ module AirbnbPayous
       airbnb_remitted_tax
     ].freeze
 
-    INTEGER_COLUMNS = %w[
+    GUEST_COUNT_COLUMNS = %w[number_of_adults number_of_children number_of_infants].freeze
+
+    INTEGER_COLUMNS = (%w[
       number_of_nights
       hosting_revenue_fiscal_year
-    ].freeze
+    ] + GUEST_COUNT_COLUMNS).freeze
 
     JOB_SCHEMA = [
       ["event_date", :date, :nullable],
@@ -64,6 +69,9 @@ module AirbnbPayous
       ["end_date", :date, :nullable],
       ["number_of_nights", :integer, :nullable],
       ["guest", :string, :nullable],
+      ["number_of_adults", :integer, :nullable],
+      ["number_of_children", :integer, :nullable],
+      ["number_of_infants", :integer, :nullable],
       ["listing_name", :string, :nullable],
       ["details", :string, :nullable],
       ["reference_code", :string, :nullable],

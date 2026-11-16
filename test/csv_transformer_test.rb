@@ -45,6 +45,48 @@ class CsvTransformerTest < Minitest::Test
     assert_includes @log_output.string, "Unexpected Airbnb Column"
   end
 
+  def test_normalizes_guest_counts_including_zero_and_blank_values
+    csv = <<~CSV
+      日付,大人,子ども,乳幼児,金額
+      11/16/2026,2,1,0,100.00
+      11/16/2026,,,,
+    CSV
+
+    rows = @transformer.call(csv)
+
+    assert_equal [2, 1, 0], rows.first.values_at(*AirbnbPayous::Schema::GUEST_COUNT_COLUMNS)
+    assert_equal [nil, nil, nil], rows.last.values_at(*AirbnbPayous::Schema::GUEST_COUNT_COLUMNS)
+    assert_empty @transformer.unmapped_source_columns
+    %w[大人 子ども 乳幼児].each { |header| refute rows.first.key?(header) }
+    assert_equal rows, @transformer.call(csv)
+  end
+
+  def test_guest_count_changes_affect_row_id
+    first = @transformer.call("日付,大人,子ども,乳幼児\n11/16/2026,2,0,0\n").first
+    changed = @transformer.call("日付,大人,子ども,乳幼児\n11/16/2026,3,0,0\n").first
+
+    refute_equal first["row_id"], changed["row_id"]
+  end
+
+  def test_guest_count_field_assignments_produce_distinct_row_ids
+    adult_count = @transformer.call("日付,大人,子ども,乳幼児\n11/16/2026,2,,0\n").first
+    child_count = @transformer.call("日付,大人,子ども,乳幼児\n11/16/2026,,2,0\n").first
+
+    refute_equal adult_count["row_id"], child_count["row_id"]
+  end
+
+  def test_legacy_row_ids_are_preserved_when_guest_counts_are_missing_or_blank
+    legacy_csv = "日付,種別,泊数,金額\n11/16/2026,予約,2,150.50\n"
+    blank_counts_csv = "日付,種別,泊数,大人,子ども,乳幼児,金額\n11/16/2026,予約,2,,,,150.50\n"
+
+    legacy = @transformer.call(legacy_csv).first
+    blank_counts = @transformer.call(blank_counts_csv).first
+
+    # Captured from the transformer before guest-count support was added.
+    assert_equal "6331ab070fce744cf1dbb54f9eead9aef6aa5be78c9a731ef351854ab2dc9c40", legacy["row_id"]
+    assert_equal legacy["row_id"], blank_counts["row_id"]
+  end
+
   def test_coerces_invalid_dates_and_numbers_to_nil
     csv = <<~CSV
       日付,泊数,金額
