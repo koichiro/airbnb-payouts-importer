@@ -135,7 +135,8 @@ module AirbnbPayous
     end
 
     def build_row_id(row)
-      values = row.values_at(*row.keys)
+      # New nullable fields must not change hashes for exports without guest counts.
+      values = row.reject { |key, value| Schema::GUEST_COUNT_COLUMNS.include?(key) && value.nil? }.values
       Digest::SHA256.hexdigest(values.inspect)
     end
 

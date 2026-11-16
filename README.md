@@ -144,6 +144,9 @@ SERVICE_ACCOUNT_EMAIL=etl-runner@your-project-id.iam.gserviceaccount.com \
 
 ### Current-state table
 
+For exports containing `大人`, `子ども`, and `乳幼児`, upgrade existing tables
+before deploying the guest-count support. See [Guest-count schema migration](plan/guest-count-migration.md).
+
 The primary `${BQ_TABLE_ID}` table remains an append-only audit history keyed by
 `row_id`. When `CURRENT_STATE_MODE=apply`, recognized annual cumulative exports
 also replace the matching event-year slice in `${BQ_TABLE_ID}_current`. This
