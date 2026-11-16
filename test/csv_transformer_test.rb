@@ -68,6 +68,13 @@ class CsvTransformerTest < Minitest::Test
     refute_equal first["row_id"], changed["row_id"]
   end
 
+  def test_guest_count_field_assignments_produce_distinct_row_ids
+    adult_count = @transformer.call("日付,大人,子ども,乳幼児\n11/16/2026,2,,0\n").first
+    child_count = @transformer.call("日付,大人,子ども,乳幼児\n11/16/2026,,2,0\n").first
+
+    refute_equal adult_count["row_id"], child_count["row_id"]
+  end
+
   def test_legacy_row_ids_are_preserved_when_guest_counts_are_missing_or_blank
     legacy_csv = "日付,種別,泊数,金額\n11/16/2026,予約,2,150.50\n"
     blank_counts_csv = "日付,種別,泊数,大人,子ども,乳幼児,金額\n11/16/2026,予約,2,,,,150.50\n"

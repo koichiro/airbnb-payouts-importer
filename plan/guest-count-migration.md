@@ -8,6 +8,9 @@ Older deployments preserve these unknown headers verbatim. Staging loads can
 succeed through schema autodetection, but MERGE fails because the destination
 table has no `大人` column. Mapping the headers alone does not upgrade existing
 tables: the English columns must be added before deploying this release.
+This migration is required for every existing audit and current table with the
+old schema, even for imports without guest-count headers: the transformer fills
+missing schema fields with NULL and MERGE still references those columns.
 
 ## Upgrade existing tables
 
