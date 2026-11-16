@@ -6,7 +6,7 @@ gem "cgi"
 gem "csv"
 gem "json", "~> 3.1"
 gem "rack", "~> 3.2", ">= 3.2.8"
-gem "puma", "~> 8.0"
+gem "puma", "~> 8.1", ">= 8.1.1"
 gem "google-cloud-bigquery", "~> 1.64"
 gem "google-cloud-storage", "~> 1.62"
 
