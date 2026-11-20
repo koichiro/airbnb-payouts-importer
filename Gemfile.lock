@@ -89,7 +89,7 @@ GEM
     prism (2.1.0-arm64-darwin)
     pstore (0.3.0)
     public_suffix (7.0.5)
-    puma (8.1.1)
+    puma (8.1.2)
       nio4r (~> 2.0)
     rack (3.2.8)
     rack-test (2.3.0)
@@ -122,7 +122,7 @@ DEPENDENCIES
   json (~> 3.1)
   minitest (~> 6.1)
   minitest-mock (~> 5.27)
-  puma (~> 8.1, >= 8.1.1)
+  puma (~> 8.1)
   rack (~> 3.2, >= 3.2.8)
   rack-test (~> 2.3)
   rake (~> 13.4)
@@ -168,7 +168,7 @@ CHECKSUMS
   prism (2.1.0-arm64-darwin) sha256=2d0c2e3e011cfd89c041940907d3ff3def379d7b0f2ba158d1d42238e8ad8afc
   pstore (0.3.0) sha256=97888d57cdc8b99b3587dde5e1d01fc5ca4a9124dfeb2afb84e3dd982e78f829
   public_suffix (7.0.5) sha256=1a8bb08f1bbea19228d3bed6e5ed908d1cb4f7c2726d18bd9cadf60bc676f623
-  puma (8.1.1) sha256=24800758cf064ecc19d056301b6946f628d77ea14653d485fa17ff6a6331555c
+  puma (8.1.2) sha256=3a6d9a34c9a4d0175eabd11b703939b5d43ebe08bc2534ac7dfd4df33a6ceedc
   rack (3.2.8) sha256=1fecc85e463ebc7a2a945fff829ffcd549babeb1556384796fad946c28dc4ec7
   rack-test (2.3.0) sha256=b118d177cc002c572fc1b6fd8d19c9ed5881a36e8d6f689f9e618f9f861241e8
   rake (13.4.2) sha256=cb825b2bd5f1f8e91ca37bddb4b9aaf345551b4731da62949be002fa89283701
