@@ -135,10 +135,10 @@ module AirbnbPayous
     end
 
     def build_row_id(row)
-      # New nullable fields must not change hashes for exports without guest counts.
-      values = row.reject { |key, value| Schema::GUEST_COUNT_COLUMNS.include?(key) && value.nil? }.map do |key, value|
-        # Keep the field identity when only some guest counts are populated.
-        Schema::GUEST_COUNT_COLUMNS.include?(key) ? [key, value] : value
+      # New nullable fields must not change hashes for legacy exports.
+      values = row.reject { |key, value| Schema::OPTIONAL_ROW_ID_COLUMNS.include?(key) && value.nil? }.map do |key, value|
+        # Keep the field identity when only some optional fields are populated.
+        Schema::OPTIONAL_ROW_ID_COLUMNS.include?(key) ? [key, value] : value
       end
       Digest::SHA256.hexdigest(values.inspect)
     end

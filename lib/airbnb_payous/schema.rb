@@ -12,6 +12,8 @@ module AirbnbPayous
       "終了日" => "end_date",
       "泊数" => "number_of_nights",
       "ゲスト" => "guest",
+      "予約ステータス" => "reservation_status",
+      "連絡先" => "contact",
       "大人" => "number_of_adults",
       "子ども" => "number_of_children",
       "乳幼児" => "number_of_infants",
@@ -54,6 +56,9 @@ module AirbnbPayous
 
     GUEST_COUNT_COLUMNS = %w[number_of_adults number_of_children number_of_infants].freeze
 
+    RESERVATION_DETAIL_COLUMNS = %w[reservation_status contact].freeze
+    OPTIONAL_ROW_ID_COLUMNS = (GUEST_COUNT_COLUMNS + RESERVATION_DETAIL_COLUMNS).freeze
+
     INTEGER_COLUMNS = (%w[
       number_of_nights
       hosting_revenue_fiscal_year
@@ -86,6 +91,8 @@ module AirbnbPayous
       ["accommodation_tax", :numeric, :nullable],
       ["airbnb_remitted_tax", :numeric, :nullable],
       ["hosting_revenue_fiscal_year", :integer, :nullable],
+      ["reservation_status", :string, :nullable],
+      ["contact", :string, :nullable],
       ["row_id", :string, :required]
     ].freeze
 
