@@ -87,6 +87,46 @@ class CsvTransformerTest < Minitest::Test
     assert_equal legacy["row_id"], blank_counts["row_id"]
   end
 
+  def test_normalizes_reservation_details_as_strings_without_logging_contact_values
+    csv = <<~CSV
+      日付,予約ステータス,連絡先,金額
+      11/26/2026, 確定済み , +81 090-0000-0000 ,100.00
+      11/26/2026, , ,
+    CSV
+
+    rows = @transformer.call(csv)
+
+    assert_equal ["確定済み", "+81 090-0000-0000"], rows.first.values_at(*AirbnbPayous::Schema::RESERVATION_DETAIL_COLUMNS)
+    assert_equal [nil, nil], rows.last.values_at(*AirbnbPayous::Schema::RESERVATION_DETAIL_COLUMNS)
+    assert_empty @transformer.unmapped_source_columns
+    %w[予約ステータス 連絡先].each { |header| refute rows.first.key?(header) }
+    refute_includes @log_output.string, "+81 090-0000-0000"
+    assert_equal rows, @transformer.call(csv)
+  end
+
+  def test_reservation_details_preserve_legacy_ids_when_missing_or_blank
+    legacy_csv = "日付,種別,泊数,金額\n11/16/2026,予約,2,150.50\n"
+    blank_details_csv = "日付,種別,予約ステータス,連絡先,泊数,金額\n11/16/2026,予約,,,2,150.50\n"
+
+    legacy = @transformer.call(legacy_csv).first
+    blank_details = @transformer.call(blank_details_csv).first
+
+    assert_equal "6331ab070fce744cf1dbb54f9eead9aef6aa5be78c9a731ef351854ab2dc9c40", legacy["row_id"]
+    assert_equal legacy["row_id"], blank_details["row_id"]
+  end
+
+  def test_reservation_detail_changes_and_field_identity_affect_row_id
+    first = @transformer.call("日付,予約ステータス,連絡先\n11/26/2026,confirmed,contact-a\n").first
+    status_changed = @transformer.call("日付,予約ステータス,連絡先\n11/26/2026,cancelled,contact-a\n").first
+    contact_changed = @transformer.call("日付,予約ステータス,連絡先\n11/26/2026,confirmed,contact-b\n").first
+    status_only = @transformer.call("日付,予約ステータス,連絡先\n11/26/2026,same,\n").first
+    contact_only = @transformer.call("日付,予約ステータス,連絡先\n11/26/2026,,same\n").first
+
+    refute_equal first["row_id"], status_changed["row_id"]
+    refute_equal first["row_id"], contact_changed["row_id"]
+    refute_equal status_only["row_id"], contact_only["row_id"]
+  end
+
   def test_coerces_invalid_dates_and_numbers_to_nil
     csv = <<~CSV
       日付,泊数,金額

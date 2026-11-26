@@ -144,6 +144,11 @@ SERVICE_ACCOUNT_EMAIL=etl-runner@your-project-id.iam.gserviceaccount.com \
 
 ### Current-state table
 
+Exports containing `予約ステータス` and `連絡先` are mapped to nullable STRING
+columns `reservation_status` and `contact`. Upgrade existing audit and current
+tables before deploying this support; see
+[Reservation-detail schema migration](plan/reservation-detail-migration.md).
+
 Before deploying the guest-count support, upgrade every existing audit and
 current table that uses the old schema, even if CSVs contain none of the
 `大人`, `子ども`, or `乳幼児` headers. See [Guest-count schema migration](plan/guest-count-migration.md).

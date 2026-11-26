@@ -334,6 +334,22 @@ class BigqueryGatewayTest < Minitest::Test
     %w[大人 子ども 乳幼児].each { |header| refute_includes @bigquery.query_job_calls.first, header }
   end
 
+  def test_loads_and_merges_reservation_details_with_explicit_string_schema
+    rows = AirbnbPayous::CsvTransformer.new(logger: @logger).call(
+      "日付,予約ステータス,連絡先\n11/26/2026,confirmed,+8109000000000\n"
+    )
+
+    @gateway.load_and_merge!(rows:)
+
+    loaded_row = JSON.parse(@dataset.loaded_json.first)
+    {"reservation_status" => "confirmed", "contact" => "+8109000000000"}.each do |name, value|
+      assert_includes @dataset.schema_fields, [:string, name, :nullable]
+      assert_equal value, loaded_row[name]
+      assert_includes @bigquery.query_job_calls.first, "S.`#{name}`"
+    end
+    %w[予約ステータス 連絡先].each { |header| refute_includes @bigquery.query_job_calls.first, header }
+  end
+
   def test_merges_with_query_job_that_exposes_row_counts_but_not_dml_stats
     bigquery = FakeBigquery.new(
       dataset: @dataset,
